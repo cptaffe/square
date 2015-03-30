@@ -6,18 +6,28 @@
 
 #include <SDL.h>
 
-typedef struct {
-	SDL_Window *win;
-	SDL_GLContext *gl;
-	int height, width; // old height and width
-} win;
+class win {
+protected:
+	SDL_Window *window;
+	SDL_GLContext gl;
 
-// construct & destruct.
-int win_init(win *w);
-void win_destroy(win *w);
+	class drawing {
+	protected:
+		SDL_Window *win;
+		int height, width; // old height and width
+	public:
+		drawing(SDL_Window *win);
+		void render();
+		void resize(int width, int height);
+	} *draw;
 
-void win_draw(win *w);
-int win_loop(win *w);
-int win_event(win *w, SDL_Event *e);
+	int event(SDL_Event *e); // handles an event
+
+public:
+	win();
+	~win();
+
+	void run(); // runs event loop
+}; // win
 
 #endif // WIN_H_

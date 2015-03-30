@@ -7,7 +7,7 @@
 			'target_name': 'libwin',
 			'type': 'static_library',
 			'sources': [
-				'win/win.c'
+				'win/win.cc'
 			],
 			'defines': [
 				'_REENTRANT',
@@ -25,7 +25,7 @@
 				'libwin',
 			],
 			'sources': [
-				'main.c',
+				'main.cc',
 			],
 			'include_dirs': [
 				'win',
