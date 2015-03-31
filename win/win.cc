@@ -59,6 +59,17 @@ int win::event(SDL_Event *e) {
 	return 0;
 }
 
+// event loop
+void win::run() {
+	for (;;) {
+		SDL_Event e;
+
+		if (event(&e) != 0) {
+			return; // it's over man.
+		}
+	}
+}
+
 // call on initial draw to set up gl
 picaso::picaso(SDL_Window *window) {
 
@@ -73,6 +84,7 @@ picaso::picaso(SDL_Window *window) {
 }
 
 picaso::~picaso() {
+	// delete drawables and vector
 	for (auto i = subjects.begin(); i != subjects.end(); i++) {
 		delete *i; // drawable
 	}
@@ -127,15 +139,4 @@ void square::draw() {
 
 	// draw triangles
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-// event loop
-void win::run() {
-	for (;;) {
-		SDL_Event e;
-
-		if (event(&e) != 0) {
-			return; // it's over man.
-		}
-	}
 }

@@ -18,7 +18,8 @@
 				'/usr/include/SDL2'
 			],
 			'cflags': [
-				'--std=c++11'
+				'--std=c++11',
+				'-g'
 			],
 		},
 		{	# main executable
