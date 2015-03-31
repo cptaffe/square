@@ -17,6 +17,9 @@
 				# SDL include on Fedora
 				'/usr/include/SDL2'
 			],
+			'cflags': [
+				'--std=c++11'
+			],
 		},
 		{	# main executable
 			'target_name': 'sdl',

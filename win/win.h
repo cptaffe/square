@@ -6,20 +6,57 @@
 
 #include <SDL.h>
 
+#include <vector>
+
+// Drawable interface
+class drawable {
+public:
+	virtual void draw() = 0;
+};
+
+// artist interface (manages drawing)
+class artist {
+public:
+	// paint all drawables
+	virtual void paint() = 0;
+	// resize canvas
+	virtual void resize(int width, int height) = 0;
+	// new drawable subject
+	virtual void subject(drawable *d) = 0;
+};
+
+// our artist is named picaso.
+class picaso : public artist {
+protected:
+	std::vector<drawable *> subjects;
+	SDL_Window *window;
+	int width, height;
+public:
+	picaso(SDL_Window *window);
+	~picaso();
+
+	// implement artist
+	virtual void paint();
+	virtual void resize(int width, int height);
+	virtual void subject(drawable *d);
+};
+
+class square : public drawable {
+public:
+	square();
+	~square();
+
+	// implement renderable
+	virtual void draw();
+};
+
 class win {
 protected:
 	SDL_Window *window;
 	SDL_GLContext gl;
 
-	class drawing {
-	protected:
-		SDL_Window *win;
-		int height, width; // old height and width
-	public:
-		drawing(SDL_Window *win);
-		void render();
-		void resize(int width, int height);
-	} *draw;
+	// manages drawing
+	artist *art;
 
 	int event(SDL_Event *e); // handles an event
 

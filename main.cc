@@ -7,11 +7,11 @@
 #include <win.h>
 
 int main(int argc, char *argv[]) {
-	win *w = new win();
+	win w;
 	int err;
 
 	try {
-		w->run();
+		w.run();
 	} catch (std::runtime_error e) {
 		puts(e.what());
 		return 1;

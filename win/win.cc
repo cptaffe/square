@@ -26,11 +26,17 @@ win::win() {
 	const unsigned char *str = glGetString(GL_VERSION);
 	printf("version: %s\n", str);
 
-	draw = new win::drawing(window); // init draw
+	// init artist
+	art = new picaso(window);
+	// add subject to art
+	art->subject((drawable *) new square());
+	// paint for first time
+	art->paint();
 }
 
 // cleanup work
 win::~win() {
+	delete art;
 	SDL_GL_DeleteContext(gl);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -44,7 +50,7 @@ int win::event(SDL_Event *e) {
 			return 1;
 		} else if (e->type == SDL_WINDOWEVENT) {
 			if (e->window.event == SDL_WINDOWEVENT_RESIZED) {
-				draw->resize(e->window.data1, e->window.data2); // update
+				art->resize(e->window.data1, e->window.data2); // update
 			}
 		}
 
@@ -54,31 +60,54 @@ int win::event(SDL_Event *e) {
 }
 
 // call on initial draw to set up gl
-win::drawing::drawing(SDL_Window *window) {
+picaso::picaso(SDL_Window *window) {
 
-	win = window;
-	SDL_GetWindowSize(win, &height, &width);
+	this->window = window;
+	SDL_GetWindowSize(window, &height, &width);
 
 	// set clear color (background color)
 	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
 
 	// depth
 	glEnable(GL_DEPTH_TEST);
-
-	render();
 }
 
-void win::drawing::resize(int width, int height) {
+picaso::~picaso() {
+	for (auto i = subjects.begin(); i != subjects.end(); i++) {
+		delete *i; // drawable
+	}
+}
+
+void picaso::resize(int width, int height) {
 	this->width = width;
 	this->height = height;
 
 	// set viewport size to current window size.
 	glViewport(0, 0, width, height);
 
-	render();
+	paint();
 }
 
-void win::drawing::render() {
+void picaso::paint() {
+
+	// clear to new clear color.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	for (auto i = subjects.begin(); i != subjects.end(); i++) {
+		(*i)->draw(); // drawable
+	}
+
+	SDL_GL_SwapWindow(window);
+}
+
+void picaso::subject(drawable *d) {
+	subjects.push_back(d);
+}
+
+square::square() {}
+square::~square() {}
+
+void square::draw() {
 
 	// current triangle buffer
 	GLfloat vertices[] = {
@@ -93,16 +122,11 @@ void win::drawing::render() {
 
 	};
 
-	// clear to new clear color.
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices);
 	glEnableVertexAttribArray(0);
 
 	// draw triangles
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	SDL_GL_SwapWindow(win);
 }
 
 // event loop
