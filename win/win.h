@@ -21,6 +21,7 @@ public:
 	virtual SDL_Window *getWindow() = 0;
 	virtual SDL_GLContext getGLContext() = 0;
 	virtual void reset() = 0; // call on gl context trashing
+	virtual void swap() = 0;
 };
 
 // artist interface (manages drawing)
@@ -49,6 +50,7 @@ public:
 	virtual SDL_Window *getWindow();
 	virtual SDL_GLContext getGLContext();
 	virtual void reset();
+	virtual void swap();
 };
 
 // our artist is named picaso.
@@ -112,7 +114,6 @@ protected:
 	artist *art;
 
 	int event(SDL_Event *e); // handles an event
-	void swap();
 
 public:
 	win();

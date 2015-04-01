@@ -31,14 +31,8 @@ int win::event(SDL_Event *e) {
 				art->resize(e->window.data1, e->window.data2); // update
 			}
 		}
-
-		swap();
 	}
 	return 0;
-}
-
-void win::swap() {
-	SDL_GL_SwapWindow(window);
 }
 
 // event loop
@@ -96,6 +90,10 @@ brain::~brain() {
 	SDL_Quit();
 }
 
+void brain::swap() {
+	SDL_GL_SwapWindow(window);
+}
+
 SDL_Window *brain::getWindow() {
 	return window;
 }
@@ -141,8 +139,7 @@ void picaso::paint() {
 		(*i)->draw(); // drawable
 	}
 
-	SDL_Window *w = state->getWindow();
-	SDL_GL_SwapWindow(w);
+	state->swap(); // swap gl buffer with window buffer
 }
 
 void picaso::subject(drawable *d) {
