@@ -4,10 +4,10 @@
 #ifndef WIN_H_
 #define WIN_H_
 
+#include <vector>
+
 #include <SDL.h>
 #include <SDL_opengles2.h>
-
-#include <vector>
 
 // Drawable interface
 class drawable {

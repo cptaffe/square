@@ -1,9 +1,9 @@
 
 // Copyright (c) 2015 Connor Taffe. All rights reserved.
 
-#include <win.h>
-
 #include <stdexcept>
+
+#include <win.h>
 
 win::win() {
 	// init artist
