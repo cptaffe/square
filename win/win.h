@@ -67,12 +67,25 @@ public:
 	virtual mind *getMind();
 };
 
+class triangle : public drawable {
+protected:
+	std::vector<GLfloat> *vertices;
+public:
+	triangle(std::vector<GLfloat> *vertices);
+	~triangle();
+
+	// implement drawable
+	virtual void draw();
+};
+
 class square : public drawable {
+protected:
+	std::vector<drawable *> triangles;
 public:
 	square();
 	~square();
 
-	// implement renderable
+	// implement drawable
 	virtual void draw();
 };
 

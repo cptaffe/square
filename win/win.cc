@@ -138,35 +138,53 @@ mind *picaso::getMind() {
 	return state;
 }
 
-square::square() {}
-square::~square() {}
+triangle::triangle(std::vector<GLfloat> *vertices) {
+	this->vertices = vertices;
 
-void square::draw() {
+	GLfloat *v = vertices->data();
+	for (int i = 0; i < 9; i++) {
+		printf("float: %f\n", v[i]);
+	}
+}
 
-	enum {
-		VVERT,
-	};
+triangle::~triangle() {
+	delete vertices;
+}
 
-	// current triangle buffer
-	GLfloat vertices[] = {
+void triangle::draw() {
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices->data());
 
+	// draw triangles
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glDisableVertexAttribArray(0);
+}
+
+square::square() {
+	const GLfloat triangle1[] = {
 		0.5f, 0.5f, 0.0f,
 		-0.5f, 0.5f, 0.0f,
 		-0.5f, -0.5f, 0.0f,
+	};
 
+	const GLfloat triangle2[] = {
 		0.5f, 0.5f, 0.0f,
 		-0.5f, -0.5f, 0.0f,
 		0.5f, -0.5f, 0.0f,
-
 	};
 
-	// associate index with program and name
-	//glBindAttribLocation(state->getProgram(), VVERT, "vertices");
+	triangles.push_back(new triangle(new std::vector<GLfloat>(std::begin(triangle1), std::end(triangle1))));
+	triangles.push_back(new triangle(new std::vector<GLfloat>(std::begin(triangle2), std::end(triangle2))));
+}
+square::~square() {
+	for (auto i = triangles.begin(); i != triangles.end(); i++) {
+		delete *i;
+	}
+}
 
-
-	glEnableVertexAttribArray(VVERT);
-	glVertexAttribPointer(VVERT, 3, GL_FLOAT, GL_FALSE, 0, vertices);
-
-	// draw triangles
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+void square::draw() {
+	// draws triangles
+	for (auto i = triangles.begin(); i != triangles.end(); i++) {
+		(*i)->draw(); // drawable
+	}
 }
