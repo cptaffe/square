@@ -2,32 +2,12 @@
 // Copyright (c) 2015 Connor Taffe. All rights reserved.
 
 #include <win.h>
-#include <SDL_opengles2.h>
 
 #include <stdexcept>
 
 win::win() {
-	int posX = 100, posY = 100, width = 512, height = 512;
-	int wflags = SDL_WINDOW_OPENGL |  SDL_WINDOW_RESIZABLE;
-
-	SDL_Init(SDL_INIT_VIDEO);
-
-	window = SDL_CreateWindow("Square", posX, posY, width, height, wflags);
-	if (window == NULL) {
-		throw new std::runtime_error("window creation failed.");
-	}
-
-	gl = SDL_GL_CreateContext(window);
-	if (gl == NULL) {
-		throw new std::runtime_error("gl context creation failed.");
-	}
-
-	// print version
-	const unsigned char *str = glGetString(GL_VERSION);
-	printf("version: %s\n", str);
-
 	// init artist
-	art = new picaso(window);
+	art = new picaso(new brain());
 	// add subject to art
 	art->subject((drawable *) new square());
 	// paint for first time
@@ -36,10 +16,8 @@ win::win() {
 
 // cleanup work
 win::~win() {
+	delete art->getMind();
 	delete art;
-	SDL_GL_DeleteContext(gl);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
 }
 
 int win::event(SDL_Event *e) {
@@ -70,11 +48,52 @@ void win::run() {
 	}
 }
 
-// call on initial draw to set up gl
-picaso::picaso(SDL_Window *window) {
+brain::brain() {
 
-	this->window = window;
-	SDL_GetWindowSize(window, &height, &width);
+	puts("brain init");
+
+	int posX = 100, posY = 100, width = 512, height = 512;
+	int wflags = SDL_WINDOW_OPENGL |  SDL_WINDOW_RESIZABLE;
+
+	SDL_Init(SDL_INIT_VIDEO);
+
+	window = SDL_CreateWindow("Square", posX, posY, width, height, wflags);
+	if (window == NULL) {
+		throw new std::runtime_error("window creation failed.");
+	}
+
+	gl = SDL_GL_CreateContext(window);
+	if (gl == NULL) {
+		throw new std::runtime_error("gl context creation failed.");
+	}
+
+	// print version
+	const unsigned char *str = glGetString(GL_VERSION);
+	printf("version: %s\n", str);
+
+	reset(); // setup gl
+}
+
+brain::~brain() {
+	puts("brain destroyed");
+	SDL_GL_DeleteContext(gl);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+}
+
+SDL_Window *brain::getWindow() {
+	return window;
+}
+
+SDL_GLContext brain::getGLContext() {
+	return gl;
+}
+
+void brain::reset() {}
+
+// call on initial draw to set up gl
+picaso::picaso(mind *state) {
+	this->state = state;
 
 	// set clear color (background color)
 	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
@@ -91,12 +110,10 @@ picaso::~picaso() {
 }
 
 void picaso::resize(int width, int height) {
-	this->width = width;
-	this->height = height;
-
 	// set viewport size to current window size.
 	glViewport(0, 0, width, height);
 
+	state->reset();
 	paint();
 }
 
@@ -109,17 +126,26 @@ void picaso::paint() {
 		(*i)->draw(); // drawable
 	}
 
-	SDL_GL_SwapWindow(window);
+	SDL_Window *w = state->getWindow();
+	SDL_GL_SwapWindow(w);
 }
 
 void picaso::subject(drawable *d) {
 	subjects.push_back(d);
 }
 
+mind *picaso::getMind() {
+	return state;
+}
+
 square::square() {}
 square::~square() {}
 
 void square::draw() {
+
+	enum {
+		VVERT,
+	};
 
 	// current triangle buffer
 	GLfloat vertices[] = {
@@ -134,8 +160,12 @@ void square::draw() {
 
 	};
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices);
-	glEnableVertexAttribArray(0);
+	// associate index with program and name
+	//glBindAttribLocation(state->getProgram(), VVERT, "vertices");
+
+
+	glEnableVertexAttribArray(VVERT);
+	glVertexAttribPointer(VVERT, 3, GL_FLOAT, GL_FALSE, 0, vertices);
 
 	// draw triangles
 	glDrawArrays(GL_TRIANGLES, 0, 6);
