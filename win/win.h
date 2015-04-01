@@ -67,11 +67,25 @@ public:
 	virtual mind *getMind();
 };
 
+// gl vertex
+class point {
+public:
+	GLfloat x, y, z;
+
+	point(GLfloat x, GLfloat y, GLfloat z);
+	~point();
+
+	void appendto(std::vector<GLfloat> *v);
+};
+
 class triangle : public drawable {
 protected:
-	std::vector<GLfloat> *vertices;
+	std::vector<point *> points;
+	std::vector<GLfloat> vertices;
+
+	void vectorize_points();
 public:
-	triangle(std::vector<GLfloat> *vertices);
+	triangle(point *p1, point *p2, point *p3);
 	~triangle();
 
 	// implement drawable
@@ -98,6 +112,7 @@ protected:
 	artist *art;
 
 	int event(SDL_Event *e); // handles an event
+	void swap();
 
 public:
 	win();

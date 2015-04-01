@@ -32,9 +32,13 @@ int win::event(SDL_Event *e) {
 			}
 		}
 
-		SDL_GL_SwapWindow(window);
+		swap();
 	}
 	return 0;
+}
+
+void win::swap() {
+	SDL_GL_SwapWindow(window);
 }
 
 // event loop
@@ -48,9 +52,20 @@ void win::run() {
 	}
 }
 
-brain::brain() {
+point::point(GLfloat x, GLfloat y, GLfloat z) {
+	this->x = x;
+	this->y = y;
+	this->z = z;
+}
+point::~point() {}
 
-	puts("brain init");
+void point::appendto(std::vector<GLfloat> *v) {
+	v->push_back(x);
+	v->push_back(y);
+	v->push_back(z);
+}
+
+brain::brain() {
 
 	int posX = 100, posY = 100, width = 512, height = 512;
 	int wflags = SDL_WINDOW_OPENGL |  SDL_WINDOW_RESIZABLE;
@@ -138,44 +153,60 @@ mind *picaso::getMind() {
 	return state;
 }
 
-triangle::triangle(std::vector<GLfloat> *vertices) {
-	this->vertices = vertices;
+triangle::triangle(point *p1, point *p2, point *p3) {
+	points.push_back(p1);
+	points.push_back(p2);
+	points.push_back(p3);
 
-	GLfloat *v = vertices->data();
-	for (int i = 0; i < 9; i++) {
-		printf("float: %f\n", v[i]);
+	vectorize_points();
+}
+
+void triangle::vectorize_points() {
+	// push into vector
+	for (auto i = points.begin(); i != points.end(); i++) {
+		(*i)->appendto(&vertices); // append into vertices.
 	}
 }
 
 triangle::~triangle() {
-	delete vertices;
+	for (auto i = points.begin(); i != points.end(); i++) {
+		delete *i; // delete
+	}
 }
 
 void triangle::draw() {
+
+	for (auto i = points.begin(); i != points.end(); i++) {
+		printf("(%f, %f, %f), ", (*i)->x, (*i)->y, (*i)->z);
+	}
+	puts("drawing!");
+
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices->data());
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
 
 	// draw triangles
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	//glDisableVertexAttribArray(0);
 }
 
 square::square() {
-	const GLfloat triangle1[] = {
-		0.5f, 0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-	};
 
-	const GLfloat triangle2[] = {
-		0.5f, 0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-	};
+	triangles.push_back(
+		new triangle(
+			new point(-0.5f, -0.5f, 0.0f),
+			new point(0.5f, 0.5f, 0.0f),
+			new point(-0.5f, 0.5f, 0.0f)
+		)
+	);
 
-	triangles.push_back(new triangle(new std::vector<GLfloat>(std::begin(triangle1), std::end(triangle1))));
-	triangles.push_back(new triangle(new std::vector<GLfloat>(std::begin(triangle2), std::end(triangle2))));
+	triangles.push_back(
+		new triangle(
+			new point(0.5f, 0.5f, 0.0f),
+			new point(-0.5f, -0.5f, 0.0f),
+			new point(0.5f, -0.5f, 0.0f)
+		)
+	);
 }
+
 square::~square() {
 	for (auto i = triangles.begin(); i != triangles.end(); i++) {
 		delete *i;
