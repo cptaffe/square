@@ -5,9 +5,7 @@
 
 #include <win.h>
 
-win::win() {
-	// init artist
-	art = new picaso(new brain());
+win::win() : art(new picaso(new brain())) {
 	// add subject to art
 	art->subject((drawable *) new square());
 	// paint for first time
@@ -16,7 +14,7 @@ win::win() {
 
 // cleanup work
 win::~win() {
-	delete art->getMind();
+	delete art->state();
 	delete art;
 }
 
@@ -46,11 +44,9 @@ void win::run() {
 	}
 }
 
-point::point(GLfloat x, GLfloat y, GLfloat z) {
-	this->x = x;
-	this->y = y;
-	this->z = z;
-}
+point::point(GLfloat x, GLfloat y, GLfloat z)
+	: x(x), y(y), z(z) {}
+
 point::~point() {}
 
 void point::appendto(std::vector<GLfloat> *v) {
@@ -60,78 +56,96 @@ void point::appendto(std::vector<GLfloat> *v) {
 }
 
 brain::brain() {
-
 	int posX = 100, posY = 100, width = 512, height = 512;
 	int wflags = SDL_WINDOW_OPENGL |  SDL_WINDOW_RESIZABLE;
 
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
-	window = SDL_CreateWindow("Square", posX, posY, width, height, wflags);
-	if (window == NULL) {
+	window_ = SDL_CreateWindow("Square", posX, posY, width, height, wflags);
+	if (window_ == NULL) {
 		throw new std::runtime_error("window creation failed.");
 	}
 
-	gl = SDL_GL_CreateContext(window);
-	if (gl == NULL) {
+	gl_context_ = SDL_GL_CreateContext(window_);
+	if (gl_context_ == NULL) {
 		throw new std::runtime_error("gl context creation failed.");
 	}
-
-	// print version
-	const unsigned char *str = glGetString(GL_VERSION);
-	printf("version: %s\n", str);
-
-	reset(); // setup gl
 }
 
 brain::~brain() {
-	puts("brain destroyed");
-	SDL_GL_DeleteContext(gl);
-	SDL_DestroyWindow(window);
+	SDL_GL_DeleteContext(gl_context_);
+	SDL_DestroyWindow(window_);
 	SDL_Quit();
 }
 
 void brain::swap() {
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(window_);
 }
 
-SDL_Window *brain::getWindow() {
-	return window;
+SDL_Window *brain::window() const { return window_; }
+
+SDL_GLContext brain::gl_context() const { return gl_context_; }
+
+timer::timer(uint32_t delay, uint32_t(*func)(uint32_t, void *), void *param)
+	: t(SDL_AddTimer(delay, func, param)) {}
+
+timer::~timer() {
+	if (SDL_RemoveTimer(t) == 0) {
+		throw new std::runtime_error("timer removal failed.");
+	}
 }
 
-SDL_GLContext brain::getGLContext() {
-	return gl;
+// timer callback
+namespace {
+extern "C"{
+
+uint32_t t_callback(uint32_t interval, void *obj) {
+	try {
+		uint32_t ninterval = static_cast<artist *>(obj)->timer_callback(interval);
+		return ninterval;
+	} catch (...) {
+		return 0; // no new timer interval because of error.
+	}
 }
 
-void brain::reset() {}
+} // namespace
+} // extern "C"
 
 // call on initial draw to set up gl
-picaso::picaso(mind *state) {
-	this->state = state;
+picaso::picaso(mind *m) : state_(m) {
+	// set up sdl timer
+	timers.push_back(new timer(33, &t_callback, this));
 
 	// set clear color (background color)
 	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
-
-	// depth
-	glEnable(GL_DEPTH_TEST);
 }
 
 picaso::~picaso() {
+	// delete timers
+	for (auto i = timers.begin(); i != timers.end(); i++) {
+		delete *i; // timer
+	}
+
 	// delete drawables and vector
 	for (auto i = subjects.begin(); i != subjects.end(); i++) {
 		delete *i; // drawable
 	}
 }
 
+uint32_t picaso::timer_callback(uint32_t interval) {
+	static int a = 0;
+	printf("test!: %d\n", a++);
+	return interval; // keep interval
+}
+
 void picaso::resize(int width, int height) {
 	// set viewport size to current window size.
 	glViewport(0, 0, width, height);
 
-	state->reset();
 	paint();
 }
 
 void picaso::paint() {
-
 	// clear to new clear color.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -139,16 +153,14 @@ void picaso::paint() {
 		(*i)->draw(); // drawable
 	}
 
-	state->swap(); // swap gl buffer with window buffer
+	state_->swap(); // swap gl buffer with window buffer
 }
 
 void picaso::subject(drawable *d) {
 	subjects.push_back(d);
 }
 
-mind *picaso::getMind() {
-	return state;
-}
+mind *picaso::state() const { return state_; }
 
 triangle::triangle(point *p1, point *p2, point *p3) {
 	points.push_back(p1);
@@ -158,6 +170,12 @@ triangle::triangle(point *p1, point *p2, point *p3) {
 	vectorize_points();
 }
 
+triangle::~triangle() {
+	for (auto i = points.begin(); i != points.end(); i++) {
+		delete *i; // delete
+	}
+}
+
 void triangle::vectorize_points() {
 	// push into vector
 	for (auto i = points.begin(); i != points.end(); i++) {
@@ -165,18 +183,7 @@ void triangle::vectorize_points() {
 	}
 }
 
-triangle::~triangle() {
-	for (auto i = points.begin(); i != points.end(); i++) {
-		delete *i; // delete
-	}
-}
-
 void triangle::draw() {
-
-	for (auto i = points.begin(); i != points.end(); i++) {
-		printf("(%f, %f, %f), ", (*i)->x, (*i)->y, (*i)->z);
-	}
-	puts("drawing!");
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());

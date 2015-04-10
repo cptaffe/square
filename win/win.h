@@ -9,24 +9,34 @@
 #include <SDL.h>
 #include <SDL_opengles2.h>
 
+// timer wrapper
+class timer {
+	SDL_TimerID t;
+public:
+	timer(uint32_t delay, uint32_t(*func)(uint32_t, void *), void *param);
+	~timer();
+};
+
 // Drawable interface
 class drawable {
 public:
+	virtual ~drawable() {};
 	virtual void draw() = 0;
 };
 
 // state of rendering interface
 class mind {
 public:
-	virtual SDL_Window *getWindow() = 0;
-	virtual SDL_GLContext getGLContext() = 0;
-	virtual void reset() = 0; // call on gl context trashing
+	virtual ~mind() {};
+	virtual SDL_Window *window() const = 0;
+	virtual SDL_GLContext gl_context() const = 0;
 	virtual void swap() = 0;
 };
 
 // artist interface (manages drawing)
 class artist {
 public:
+	virtual ~artist() {};
 	// paint all drawables
 	virtual void paint() = 0;
 	// resize canvas
@@ -34,39 +44,42 @@ public:
 	// new drawable subject
 	virtual void subject(drawable *d) = 0;
 	// get mindset (state)
-	virtual mind *getMind() = 0;
+	virtual mind *state() const = 0;
+	// callback for timers
+	virtual uint32_t timer_callback(uint32_t interval) = 0;
 };
 
 // our mindset (rendering state) is called a brain.
 class brain : public mind {
-protected:
-	SDL_Window *window;
-	SDL_GLContext gl;
 public:
 	brain();
-	~brain();
+	virtual ~brain();
 
 	// implement mind
-	virtual SDL_Window *getWindow();
-	virtual SDL_GLContext getGLContext();
-	virtual void reset();
+	virtual SDL_Window *window() const;
+	virtual SDL_GLContext gl_context() const;
 	virtual void swap();
+private:
+	SDL_Window *window_;
+	SDL_GLContext gl_context_;
 };
 
 // our artist is named picaso.
 class picaso : public artist {
-protected:
-	std::vector<drawable *> subjects;
-	mind *state;
 public:
 	picaso(mind *m);
-	~picaso();
+	virtual ~picaso();
 
 	// implement artist
 	virtual void paint();
 	virtual void resize(int width, int height);
 	virtual void subject(drawable *d);
-	virtual mind *getMind();
+	virtual mind *state() const;
+	virtual uint32_t timer_callback(uint32_t interval);
+private:
+	std::vector<drawable *> subjects;
+	std::vector<timer *> timers;
+	mind *state_;
 };
 
 // gl vertex
@@ -75,34 +88,34 @@ public:
 	GLfloat x, y, z;
 
 	point(GLfloat x, GLfloat y, GLfloat z);
-	~point();
+	virtual ~point();
 
 	void appendto(std::vector<GLfloat> *v);
 };
 
 class triangle : public drawable {
-protected:
+public:
+	triangle(point *p1, point *p2, point *p3);
+	virtual ~triangle();
+
+	// implement drawable
+	virtual void draw();
+private:
 	std::vector<point *> points;
 	std::vector<GLfloat> vertices;
 
 	void vectorize_points();
-public:
-	triangle(point *p1, point *p2, point *p3);
-	~triangle();
-
-	// implement drawable
-	virtual void draw();
 };
 
 class square : public drawable {
-protected:
-	std::vector<drawable *> triangles;
 public:
 	square();
-	~square();
+	virtual ~square();
 
 	// implement drawable
 	virtual void draw();
+private:
+	std::vector<drawable *> triangles;
 };
 
 class win {
@@ -117,7 +130,7 @@ protected:
 
 public:
 	win();
-	~win();
+	virtual ~win();
 
 	void run(); // runs event loop
 }; // win
