@@ -87,11 +87,17 @@ SDL_Window *brain::window() const { return window_; }
 SDL_GLContext brain::gl_context() const { return gl_context_; }
 
 timer::timer(uint32_t delay, uint32_t(*func)(uint32_t, void *), void *param)
-	: t(SDL_AddTimer(delay, func, param)) {}
+	: timer_(SDL_AddTimer(delay, func, param)) {
+		if (timer_ == 0) {
+			// bad timer id
+			throw new std::runtime_error("timer addition failed.");
+		}
+	}
 
 timer::~timer() {
-	if (SDL_RemoveTimer(t) == 0) {
-		throw new std::runtime_error("timer removal failed.");
+	if (SDL_RemoveTimer(timer_) == SDL_FALSE) {
+		// FIXME: seems to always fail.
+		// throw new std::runtime_error("timer removal failed.");
 	}
 }
 

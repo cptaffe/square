@@ -11,7 +11,7 @@
 
 // timer wrapper
 class timer {
-	SDL_TimerID t;
+	SDL_TimerID timer_;
 public:
 	timer(uint32_t delay, uint32_t(*func)(uint32_t, void *), void *param);
 	~timer();
